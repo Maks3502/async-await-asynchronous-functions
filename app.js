@@ -1,31 +1,33 @@
-const input = document.querySelector('#country-name');
-const list = document.querySelector('#countries');
-const debounced = _.debounce(async () => {
-  const name = input.value;
-  if (!name) {
-    return;
-  }
+const apiKey = '43066130-5334719edca1429b8c556a89d';
+const perPage = 10;
+let currentPage = 1;
 
-  try {
-    const response = await fetch(`https://restcountries.com/v2/name/${name}`);
+const imageContainer = document.getElementById('image-container');
+const loadMoreButton = document.getElementById('load-more');
+
+async function fetchImages() {
+    const response = await fetch(`https://pixabay.com/api/?key=${apiKey}&editors_choice=true&page=${currentPage}&per_page=${perPage}`);
     const data = await response.json();
+    return data.hits;
+}
 
-    if (data.length > 10) {
-      PNotify.error({
-        text: 'Запит занадто широкий. Будь ласка, введіть більш специфічну назву країни.'
-      });
-      return;
+async function displayImages() {
+    try {
+        const images = await fetchImages();
+        images.forEach(image => {
+            const imgElement = document.createElement('img');
+            imgElement.src = image.previewURL;
+            imgElement.classList.add('image-preview');
+            imageContainer.appendChild(imgElement);
+        });
+    } catch (error) {
+        console.error('Error fetching images:', error);
     }
+}
 
-    list.innerHTML = '';
-    data.forEach(country => {
-      const li = document.createElement('li');
-      li.textContent = country.name;
-      list.appendChild(li);
-    });
-  } catch (error) {
-    console.error('Помилка під час отримання даних:', error);
-  }
-}, 500);
+loadMoreButton.addEventListener('click', async () => {
+    currentPage++;
+    await displayImages();
+});
 
-input.addEventListener('input', debounced);
+displayImages();
